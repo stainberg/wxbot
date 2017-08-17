@@ -102,8 +102,6 @@ func (self *WxWeb) getUuid(args ...interface{}) bool {
 
 func (self *WxWeb) genQRcode(args ...interface{}) bool {
 	urlstr := "https://login.weixin.qq.com/qrcode/" + self.uuid
-	urlstr += "?t=webwx"
-	urlstr += "&_=" + self._unixStr()
 	path := "qrcode.jpg"
 	out, err := os.Create(path)
 	resp, err := self._get(urlstr, false)
@@ -185,14 +183,14 @@ func (self *WxWeb) _get(urlstr string, jsonFmt bool) (string, error) {
 
 func (self *WxWeb) waitForLogin(tip int) bool {
 	url := "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login"
-	url += "?tip=" + strconv.Itoa(tip) + "&uuid=" + self.uuid + "&_=" + self._unixStr()
+	url += "?loginicon=true&tip=0&uuid=" + self.uuid + "&_=" + self._unixStr() + "&r=" + strconv.Itoa(int(time.Now().Unix()) / 1579)
 	data, _ := self._get(url, false)
 	re := regexp.MustCompile(`window.code=(\d+);`)
 	find := re.FindStringSubmatch(data)
 	if len(find) > 1 {
 		code := find[1]
 		if code == "201" {
-			return true
+			return false
 		} else if code == "200" {
 			re := regexp.MustCompile(`window.redirect_uri="(\S+?)";`)
 			find := re.FindStringSubmatch(data)
@@ -296,13 +294,17 @@ func (self *WxWeb) synccheck() (string, string) {
 
 func (self *WxWeb) testsynccheck(args ...interface{}) bool {
 	SyncHost := []string{
+		"webpush.wx2.qq.com",
+		"webpush.wx8.qq.com",
 		"webpush.wx.qq.com",
+		"webpush.web2.wechat.com",
+		"webpush.web.wechat.com",
 		"webpush2.wx.qq.com",
 		"webpush.wechat.com",
 		"webpush1.wechat.com",
 		"webpush2.wechat.com",
 		"webpush1.wechatapp.com",
-		//"webpush.wechatapp.com"
+		"webpush.wechatapp.com",
 	}
 	for _, host := range SyncHost {
 		self.syncHost = host
@@ -439,6 +441,8 @@ func (self *WxWeb) handleMsg(r interface{}) {
 		content = strings.Replace(content, "&lt;", "<", -1)
 		content = strings.Replace(content, "&gt;", ">", -1)
 		content = strings.Replace(content, " ", " ", 1)
+		msg := utils.JsonEncode(r)
+		println(msg)
 		if msgType == 1 {
 
 		}
@@ -476,23 +480,9 @@ func (self *WxWeb) webwxgetcontact(args ...interface{}) bool {
 	if err != nil {
 		return false
 	} else {
-		println(data)
 		contact := new(Contact)
 		err = json.Unmarshal([]byte(data), &contact)
 		self.contact = contact
-		return true
-	}
-}
-
-func (self *WxWeb) webwxgetchatrooms(args ...interface{}) bool {
-	urlstr := fmt.Sprintf("%s/getchatrooms?r=%s&pass_ticket=%s", self.base_uri, self._unixStr(), self.pass_ticket)
-	params := make(map[string]interface{})
-	params["BaseRequest"] = self.BaseRequest
-	data, err := self._post(urlstr, params, true)
-	if err != nil {
-		return false
-	} else {
-		println(data)
 		return true
 	}
 }
@@ -510,8 +500,6 @@ func (self *WxWeb) getUserIdByNickName(nickname string) Member {
 
 func (self *WxWeb) SendMessage(message string, nickname string) bool {
 	toUseName := self.getUserIdByNickName(nickname)
-	fmt.Println(nickname)
-	fmt.Println(utils.JsonEncode(toUseName))
 	return self.webwxsendmsg(message, toUseName.UserName)
 }
 
