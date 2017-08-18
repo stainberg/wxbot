@@ -3,6 +3,10 @@ package models
 import (
 	"github.com/stainberg/koalart"
 	"net/http"
+	"strings"
+	"io"
+	"mirbase"
+	"wx"
 )
 
 type HookSendController struct {
@@ -14,19 +18,23 @@ func (k *HookSendController) URLMapping() {
 }
 
 func (c *HookSendController) Post()  {
-	println(c.Ctx.Request.Host)
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	//message := c.Ctx.Form.Get("message")
-	//token := c.Ctx.Form.Get("token")
-	//if message == "" || token == "" {
-	//	io.WriteString(c.Ctx.Writer, `illegal name or token`)
-	//	return
-	//}
-	//name := mirbase.FindNameByToken(token)
-	//status := wx.WxClient.SendMessage(message, name)
-	//if status {
-	//	io.WriteString(c.Ctx.Writer, `send ok`)
-	//} else {
-	//	io.WriteString(c.Ctx.Writer, `send fail`)
-	//}
+	message := c.Ctx.Form.Get("message")
+	s := strings.Split(c.Ctx.Request.URL.Path, "/")
+	token := s[len(s) - 2]
+	b, name := mirbase.FindNameByToken(token)
+	if !b {
+		io.WriteString(c.Ctx.Writer, name)
+		return
+	}
+	if message == "" {
+		io.WriteString(c.Ctx.Writer, `illegal name or token`)
+		return
+	}
+	status := wx.WxClient.SendMessage(message, name)
+	if status {
+		io.WriteString(c.Ctx.Writer, `send ok`)
+	} else {
+		io.WriteString(c.Ctx.Writer, `send fail`)
+	}
 }

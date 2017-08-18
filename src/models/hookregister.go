@@ -19,7 +19,7 @@ func (k *HookRegisterController) URLMapping() {
 func (c *HookRegisterController) Get()  {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Query.Get("token")
-	name := mirbase.FindNameByToken(token)
+	_, name := mirbase.FindNameByToken(token)
 	io.WriteString(c.Ctx.Writer, name)
 }
 

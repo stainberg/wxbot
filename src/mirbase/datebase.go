@@ -3,6 +3,7 @@ package mirbase
 import (
 	"github.com/go-redis/redis"
 	"fmt"
+	"utils"
 )
 
 var client *redis.Client
@@ -11,7 +12,7 @@ var (
 	HISTORY_INFO = "HistoryInfo"
 	NEW_INFO = "NewInfo"
 	WX_TOKEN = "WechatToken"
-	TOKEN = "Token"
+	TOKEN_POLL = "TokenPoll"
 )
 
 func InitClient() {
@@ -53,42 +54,50 @@ func FetchHistoryInfo(count int64) ([]string, error) {
 	return rs, nil
 }
 
+func NewToken() string {
+	token := utils.SecurityMD5(utils.GenerateId())
+	client.SAdd(TOKEN_POLL, token).Result()
+	return token
+}
+
+func GetToken() string {
+	token, err := client.SPop(TOKEN_POLL).Result()
+	if err != nil {
+		return NewToken()
+	}
+	return token
+}
+
 func BindTokenToName(token, name string) (bool, string) {
-	in, err := client.SIsMember(TOKEN, token).Result()
+	in, err := client.SIsMember(TOKEN_POLL, token).Result()
 	if err != nil {
 		return false, err.Error()
 	}
 	if !in {
 		return false, "invalid token"
 	}
-	b, e := client.HSet(WX_TOKEN, token, name).Result()
-	if e != nil {
+	b, err := client.HSet(WX_TOKEN, token, name).Result()
+	if err != nil {
 		return false, err.Error()
 	}
 	if !b {
 		return false, "bind fail"
 	}
+	client.SRem(TOKEN_POLL, token).Result()
 	return true, "ok"
 }
 
-func FindNameByToken(token string) string {
-	in, err := client.SIsMember(TOKEN, token).Result()
+func FindNameByToken(token string) (bool, string) {
+	b, err := client.HExists(WX_TOKEN, token).Result()
 	if err != nil {
-		return err.Error()
-	}
-	if !in {
-		return "invalid token"
-	}
-	b, e := client.HExists(WX_TOKEN, token).Result()
-	if e != nil {
-		return err.Error()
+		return false, err.Error()
 	}
 	if !b {
-		return "did not bind token to any name"
+		return false, "did not bind token to any name"
 	}
-	name, e := client.HGet(WX_TOKEN, token).Result()
-	if e != nil {
-		return err.Error()
+	name, err := client.HGet(WX_TOKEN, token).Result()
+	if err != nil {
+		return false, err.Error()
 	}
-	return name
+	return true, name
 }

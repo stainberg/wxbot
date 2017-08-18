@@ -11,6 +11,9 @@ import (
 	"encoding/json"
 	"strings"
 	"fmt"
+	"encoding/hex"
+	"encoding/base64"
+	"crypto/md5"
 )
 
 const (
@@ -146,4 +149,29 @@ func float2Int(input interface{}) interface{} {
 		return false
 	}
 	return input
+}
+
+func SecurityMD5(src string) string {
+	hs := md5.New()
+	hs.Reset()
+	hs.Write(StringBytes(src))
+	return strings.ToLower(hex.EncodeToString(hs.Sum(nil)))
+}
+
+func Base64Encode(src string) string {
+	bs := base64.URLEncoding.EncodeToString(StringBytes(src))
+	dst := strings.Replace(string(bs), "/", "_", -1)
+	dst = strings.Replace(dst, "+", "-", -1)
+	dst = strings.Replace(dst, "=", "", -1)
+	return dst
+}
+
+func Base64Decode(src string) (string) {
+	var missing = (4 - len(src)%4) % 4
+	src += strings.Repeat("=", missing)
+	db, err := base64.URLEncoding.DecodeString(src)
+	if err != nil {
+		println(err.Error())
+	}
+	return BytesString(db)
 }

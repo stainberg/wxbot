@@ -19,7 +19,6 @@ func (k *WechatController) URLMapping() {
 func (c *WechatController) Get()  {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	io.WriteString(c.Ctx.Writer, `Get WechatController`)
-
 }
 
 func (c *WechatController) Post()  {
