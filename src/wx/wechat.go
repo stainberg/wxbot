@@ -439,7 +439,6 @@ func (self *WxWeb) handleMsg(r interface{}) {
 }
 
 func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
-	println(toUseNname)
 	urlstr := fmt.Sprintf("%s/webwxsendmsg?sid=%s&skey=%s&pass_ticket=%s", self.base_uri, self.sid, self.skey, self.pass_ticket)
 	clientMsgId := self._unixStr() + "0" + strconv.Itoa(rand.Int())[3:6]
 	params := make(map[string]interface{})

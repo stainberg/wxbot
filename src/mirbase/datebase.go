@@ -9,7 +9,6 @@ import (
 var client *redis.Client
 
 var (
-	HISTORY_INFO = "HistoryInfo"
 	WX_TOKEN = "WechatToken"
 	TOKEN_POLL = "TokenPoll"
 )
@@ -22,26 +21,6 @@ func InitClient() {
 	})
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
-}
-
-func SaveInfo(info string) int64 {
-	count, _ := client.RPush(HISTORY_INFO, info).Result()
-	return count
-}
-
-func FetchHistoryInfo(count int64) ([]string, error) {
-	c, err := client.LLen(HISTORY_INFO).Result()
-	if err != nil {
-		return []string{}, err
-	}
-	if count > c {
-		count = c
-	}
-	rs, err := client.LRange(HISTORY_INFO, c - count, c).Result()
-	if err != nil {
-		return []string{}, err
-	}
-	return rs, nil
 }
 
 func NewToken() string {

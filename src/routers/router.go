@@ -25,9 +25,6 @@ func init() {
 				koala.NSController(new(models.WxLoginController)),
 			),
 		),
-		koala.NSNamespace("info",
-			koala.NSController(new(models.CoinInfoController)),
-		),
 	)
 	koala.RegisterNamespace(ns)
 }
