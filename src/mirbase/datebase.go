@@ -10,7 +10,6 @@ var client *redis.Client
 
 var (
 	HISTORY_INFO = "HistoryInfo"
-	NEW_INFO = "NewInfo"
 	WX_TOKEN = "WechatToken"
 	TOKEN_POLL = "TokenPoll"
 )
@@ -26,17 +25,8 @@ func InitClient() {
 }
 
 func SaveInfo(info string) int64 {
-	client.RPush(HISTORY_INFO, info).Result()
-	count, _ := client.RPush(NEW_INFO, info).Result()
+	count, _ := client.RPush(HISTORY_INFO, info).Result()
 	return count
-}
-
-func FetchNewInfo() (string, error) {
-	info, err := client.RPop(NEW_INFO).Result()
-	if err != nil {
-		return "", err
-	}
-	return info, nil
 }
 
 func FetchHistoryInfo(count int64) ([]string, error) {
@@ -69,6 +59,14 @@ func GetToken() string {
 }
 
 func BindTokenToName(token, name string) (bool, string) {
+	b, _ := client.HExists(WX_TOKEN, token).Result()
+	if b {
+		_, err := client.HSet(WX_TOKEN, token, name).Result()
+		if err != nil {
+			return false, err.Error()
+		}
+		return true, "ok"
+	}
 	in, err := client.SIsMember(TOKEN_POLL, token).Result()
 	if err != nil {
 		return false, err.Error()
@@ -76,12 +74,9 @@ func BindTokenToName(token, name string) (bool, string) {
 	if !in {
 		return false, "invalid token"
 	}
-	b, err := client.HSet(WX_TOKEN, token, name).Result()
+	_, err = client.HSet(WX_TOKEN, token, name).Result()
 	if err != nil {
 		return false, err.Error()
-	}
-	if !b {
-		return false, "bind fail"
 	}
 	client.SRem(TOKEN_POLL, token).Result()
 	return true, "ok"

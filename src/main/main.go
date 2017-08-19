@@ -10,7 +10,6 @@ import (
 func main() {
 	mirbase.InitClient()
 	go func() {
-		wx.WxClient = new(wx.WxWeb)
 		wx.WxClient.Start()
 	}()
 	koala.Run("8888")

@@ -3,7 +3,7 @@ package wx
 type Contact struct {
 	BaseResponse BaseResponse `json:"BaseResponse"`
 	MemberCount int `json:"MemberCount"`
-	MemberList []Member `json:"MemberList"`
+	MemberList []*Member `json:"MemberList"`
 	Seq int `json:"Seq"`
 }
 

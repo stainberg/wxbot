@@ -61,13 +61,11 @@ func handler(c *CoinInfoController) {
 func getNewInfo() string {
 	info := new(Info)
 	info.Info = make([]string, 0)
-	m, err := mirbase.FetchNewInfo()
+	m, err := mirbase.FetchHistoryInfo(1)
 	if err != nil {
 
 	}
-	if m != "" {
-		info.Info = append(info.Info, m)
-	}
+	info.Info = m
 	data, err := json.Marshal(info)
 	if err != nil {
 

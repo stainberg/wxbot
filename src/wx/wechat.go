@@ -14,7 +14,6 @@ import (
 	"strings"
 	"math/rand"
 	"net/http/cookiejar"
-	"math"
 	"utils"
 	"runtime"
 	"os/exec"
@@ -32,6 +31,12 @@ func debugPrint(content interface{}) {
 
 var WxClient *WxWeb
 
+func init() {
+	WxClient = new(WxWeb)
+	WxClient.stop = true
+	WxClient.stopped = true
+}
+
 type WxWeb struct {
 	uuid         string
 	base_uri     string
@@ -48,6 +53,9 @@ type WxWeb struct {
 	syncHost     string
 	http_client  *http.Client
 	contact      *Contact
+	callback     WxCallback
+	stop         bool
+	stopped       bool
 }
 
 func (self *WxWeb) _unixStr() string {
@@ -280,7 +288,8 @@ func (self *WxWeb) synccheck() (string, string) {
 	v.Add("_", self._unixStr())
 	urlstr = urlstr + "?" + v.Encode()
 	data, _ := self._get(urlstr, false)
-	re := regexp.MustCompile(`window.synccheck={retcode:"(\d+)",selector:"(\d+)"}`)
+	paren := `window.synccheck={retcode:"(\d+)",selector:"(\d+)"}`
+	re := regexp.MustCompile(paren)
 	find := re.FindStringSubmatch(data)
 	if len(find) > 2 {
 		retcode := find[1]
@@ -288,6 +297,7 @@ func (self *WxWeb) synccheck() (string, string) {
 		debugPrint(fmt.Sprintf("retcode:%s,selector,selector%s", find[1], find[2]))
 		return retcode, selector
 	} else {
+		println(data)
 		return "9999", "0"
 	}
 }
@@ -353,8 +363,6 @@ func (self *WxWeb) webgetchatroommember(chatroomId string) (map[string]string, e
 	}
 	data := utils.JsonDecode(res).(map[string]interface{})
 	RoomContactList := data["ContactList"].([]interface{})[0].(map[string]interface{})["MemberList"]
-	man := 0
-	woman := 0
 	for _, v := range RoomContactList.([]interface{}) {
 		if m, ok := v.([]interface{}); ok {
 			for _, s := range m {
@@ -363,52 +371,6 @@ func (self *WxWeb) webgetchatroommember(chatroomId string) (map[string]string, e
 		} else {
 			members = append(members, v.(map[string]interface{})["UserName"].(string))
 		}
-	}
-	urlstr = fmt.Sprintf("%s/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s", self.base_uri, self._unixStr(), self.pass_ticket)
-	length := 50
-	debugPrint(members)
-	mnum := len(members)
-	block := int(math.Ceil(float64(mnum) / float64(length)))
-	k := 0
-	for k < block {
-		offset := k * length
-		var l int
-		if offset+length > mnum {
-			l = mnum
-		} else {
-			l = offset + length
-		}
-		blockmembers := members[offset:l]
-		params := make(map[string]interface{})
-		params["BaseRequest"] = self.BaseRequest
-		params["Count"] = len(blockmembers)
-		blockmemberslist := []map[string]string{}
-		for _, g := range blockmembers {
-			blockmemberslist = append(blockmemberslist, map[string]string{
-				"UserName":        g,
-				"EncryChatRoomId": chatroomId,
-			})
-		}
-		params["List"] = blockmemberslist
-		debugPrint(urlstr)
-		debugPrint(params)
-		dic, err := self._post(urlstr, params, true)
-		if err == nil {
-			debugPrint("flag")
-			userlist := utils.JsonDecode(dic).(map[string]interface{})["ContactList"]
-			for _, u := range userlist.([]interface{}) {
-				if u.(map[string]interface{})["Sex"].(int) == 1 {
-					man++
-				} else if u.(map[string]interface{})["Sex"].(int) == 2 {
-					woman++
-				}
-			}
-		}
-		k++
-	}
-	stats = map[string]string{
-		"woman": strconv.Itoa(woman),
-		"man":   strconv.Itoa(man),
 	}
 	return stats, nil
 }
@@ -433,24 +395,52 @@ func (self *WxWeb) webwxsync() interface{} {
 }
 
 func (self *WxWeb) handleMsg(r interface{}) {
-	//myNickName := self.User["NickName"].(string)
 	for _, msg := range r.(map[string]interface{})["AddMsgList"].([]interface{}) {
 		msgType := msg.(map[string]interface{})["MsgType"].(int)
-		//fromUserName := msg.(map[string]interface{})["FromUserName"].(string)
 		content := msg.(map[string]interface{})["Content"].(string)
 		content = strings.Replace(content, "&lt;", "<", -1)
 		content = strings.Replace(content, "&gt;", ">", -1)
 		content = strings.Replace(content, " ", " ", 1)
-		msg := utils.JsonEncode(r)
-		println(msg)
+		msgstr := utils.JsonEncode(r)
+		println(msgstr)
 		if msgType == 1 {
 
+		} else if msgType == 42 {
+			member := new(Member)
+			info := msg.(map[string]interface{})["RecommendInfo"].(interface{})
+			member.UserName = info.(map[string]interface{})["UserName"].(string)
+			member.Alias = info.(map[string]interface{})["Alias"].(string)
+			member.NickName = info.(map[string]interface{})["NickName"].(string)
+			member.Sex = info.(map[string]interface{})["Sex"].(int)
+			member.Signature = info.(map[string]interface{})["Signature"].(string)
+			self.contact.MemberList = append(self.contact.MemberList, member)
+		}
+		ModContactCount := r.(map[string]interface{})["ModContactCount"].(int)
+		if ModContactCount > 0 {
+			for _, contact := range r.(map[string]interface{})["ModContactList"].([]interface{}) {
+				find := false
+				for _, member := range self.contact.MemberList {
+					if member.UserName == contact.(map[string]interface{})["UserName"].(string) {
+						member.NickName = contact.(map[string]interface{})["NickName"].(string)
+						find = true
+						break
+					}
+				}
+				if find {
+					continue
+				}
+				m := new(Member)
+				m.NickName = contact.(map[string]interface{})["NickName"].(string)
+				m.UserName = contact.(map[string]interface{})["UserName"].(string)
+				self.contact.MemberList = append(self.contact.MemberList, m)
+			}
 		}
 	}
 }
 
 func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
-	urlstr := fmt.Sprintf("%s/webwxsendmsg?pass_ticket=%s", self.base_uri, self.pass_ticket)
+	println(toUseNname)
+	urlstr := fmt.Sprintf("%s/webwxsendmsg?sid=%s&skey=%s&pass_ticket=%s", self.base_uri, self.sid, self.skey, self.pass_ticket)
 	clientMsgId := self._unixStr() + "0" + strconv.Itoa(rand.Int())[3:6]
 	params := make(map[string]interface{})
 	params["BaseRequest"] = self.BaseRequest
@@ -487,7 +477,7 @@ func (self *WxWeb) webwxgetcontact(args ...interface{}) bool {
 	}
 }
 
-func (self *WxWeb) getUserIdByNickName(nickname string) Member {
+func (self *WxWeb) getUserIdByNickName(nickname string) *Member {
 	if len(self.contact.MemberList) > 0 {
 		for _, member := range self.contact.MemberList {
 			if member.NickName == nickname || member.RemarkName == nickname {
@@ -495,19 +485,41 @@ func (self *WxWeb) getUserIdByNickName(nickname string) Member {
 			}
 		}
 	}
-	return Member{}
+	return nil
+}
+
+func (self *WxWeb) GetContact() {
+	go self.webwxgetcontact()
 }
 
 func (self *WxWeb) SendMessage(message string, nickname string) bool {
 	toUseName := self.getUserIdByNickName(nickname)
-	return self.webwxsendmsg(message, toUseName.UserName)
+	if toUseName == nil {
+		return self.webwxsendmsg(message, nickname)
+	} else {
+		return self.webwxsendmsg(message, toUseName.UserName)
+	}
+}
+
+func (self *WxWeb) Stopped() bool {
+	return self.stopped
+}
+
+func (self *WxWeb) Stop() {
+	self.stop = true
 }
 
 func (self *WxWeb) Start() {
+	WxClient.stop = true
+	for !WxClient.stopped {
+		time.Sleep(1 * time.Millisecond)
+	}
+	WxClient.stop = false
+	WxClient.stopped = false
 	self._init()
 	self._run("[*] 正在获取 uuid ... ", self.getUuid)
 	self._run("[*] 正在获取 二维码 ... ", self.genQRcode)
-	for {
+	for !WxClient.stop {
 		time.Sleep(3 * time.Second)
 		if self.waitForLogin(1) == false {
 			continue
@@ -523,7 +535,7 @@ func (self *WxWeb) Start() {
 	self._run("[*] 开启状态通知 ... ", self.webwxstatusnotify)
 	self._run("[*] 进行同步线路测试 ... ", self.testsynccheck)
 	self._run("[*] 获取用户列表 ... ", self.webwxgetcontact)
-	for {
+	for !WxClient.stop {
 		retcode, selector := self.synccheck()
 		if retcode == "0" {
 			if selector == "2" {
@@ -539,8 +551,18 @@ func (self *WxWeb) Start() {
 				self.webwxsync()
 			}
 		} else {
-			fmt.Println("[*] 重新登陆")
+			fmt.Println("[*] 重新登陆 " + retcode)
+			WxClient.stop = true
+			continue
 		}
 		time.Sleep(1 * time.Second)
 	}
+	if self.callback != nil {
+		self.callback.Logout()
+	}
+	WxClient.stopped = true
+}
+
+func (self *WxWeb) SetCallback(cb WxCallback) {
+	self.callback = cb
 }

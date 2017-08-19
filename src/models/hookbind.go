@@ -5,25 +5,26 @@ import (
 	"net/http"
 	"io"
 	"mirbase"
+	"fmt"
 )
 
-type HookRegisterController struct {
+type HookBindController struct {
 	koala.Controller
 }
 
-func (k *HookRegisterController) URLMapping() {
+func (k *HookBindController) URLMapping() {
 	k.Mapping(koala.GET, k.Get)
 	k.Mapping(koala.POST, k.Post)
 }
 
-func (c *HookRegisterController) Get()  {
+func (c *HookBindController) Get()  {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Query.Get("token")
 	_, name := mirbase.FindNameByToken(token)
 	io.WriteString(c.Ctx.Writer, name)
 }
 
-func (c *HookRegisterController) Post()  {
+func (c *HookBindController) Post()  {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	name := c.Ctx.Form.Get("name")
 	token := c.Ctx.Form.Get("token")
@@ -36,5 +37,6 @@ func (c *HookRegisterController) Post()  {
 		io.WriteString(c.Ctx.Writer, msg)
 		return
 	}
-	io.WriteString(c.Ctx.Writer, `bind ok`)
+	url := fmt.Sprintf(`%s/v1/wechat/hook/%s/send`, c.Ctx.Request.Host, token)
+	io.WriteString(c.Ctx.Writer, url)
 }
