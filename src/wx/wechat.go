@@ -551,10 +551,16 @@ func (self *WxWeb) Start() {
 			} else if selector == "6" || selector == "4" {
 				self.webwxsync()
 			}
-		} else {
-			fmt.Println("[*] 重新登陆 " + retcode)
+		} else if retcode == "1101" {
+			fmt.Println("[*] 重新登陆 在其他地方登录")
 			WxClient.stop = true
-			continue
+			break
+		} else if retcode == "1100" {
+			fmt.Println("[*] 重新登陆 登出了微信")
+			WxClient.stop = true
+			break
+		} else {
+			fmt.Println("[*] retcode = " + retcode)
 		}
 		time.Sleep(1 * time.Second)
 	}
