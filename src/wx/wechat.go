@@ -254,7 +254,7 @@ func (self *WxWeb) webwxinit(args ...interface{}) bool {
 	if err != nil {
 		return false
 	}
-	ioutil.WriteFile("tmp.txt", []byte(res), 777)
+	//ioutil.WriteFile("tmp.txt", []byte(res), 777)
 	data := utils.JsonDecode(res).(map[string]interface{})
 	self.User = data["User"].(map[string]interface{})
 	self.SyncKey = data["SyncKey"].(map[string]interface{})
@@ -422,6 +422,7 @@ func (self *WxWeb) handleMsg(r interface{}) {
 				for _, member := range self.contact.MemberList {
 					if member.UserName == contact.(map[string]interface{})["UserName"].(string) {
 						member.NickName = contact.(map[string]interface{})["NickName"].(string)
+						println("1 Update Nickname = " + member.NickName + " for user = " + member.UserName)
 						find = true
 						break
 					}
@@ -433,6 +434,7 @@ func (self *WxWeb) handleMsg(r interface{}) {
 				m.NickName = contact.(map[string]interface{})["NickName"].(string)
 				m.UserName = contact.(map[string]interface{})["UserName"].(string)
 				self.contact.MemberList = append(self.contact.MemberList, m)
+				println("2 Add Nickname = " + m.NickName + " for user = " + m.UserName)
 			}
 		}
 	}
