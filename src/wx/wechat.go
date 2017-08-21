@@ -75,7 +75,7 @@ func (self *WxWeb) _run(desc string, f func(...interface{}) bool, args ...interf
 	} else {
 		result = f()
 	}
-	useTime := fmt.Sprintf("%.5f", (float64(time.Now().UnixNano()-start) / 1000000000))
+	useTime := fmt.Sprintf("%.5f", (float64(time.Now().UnixNano() - start) / 1000000000))
 	if result {
 		fmt.Println("成功,用时" + useTime + "秒")
 	} else {
@@ -89,6 +89,7 @@ func (self *WxWeb) _init() {
 	httpclient := http.Client{
 		CheckRedirect: nil,
 		Jar:           gCookieJar,
+		Timeout:       60 * time.Second,
 	}
 	self.http_client = &httpclient
 	rand.Seed(time.Now().Unix())
@@ -303,10 +304,9 @@ func (self *WxWeb) synccheck() (string, string) {
 	if len(find) > 2 {
 		retcode := find[1]
 		selector := find[2]
-		debugPrint(fmt.Sprintf("retcode:%s,selector,selector%s", find[1], find[2]))
+		debugPrint(fmt.Sprintf("retcode:%s, selector:%s", find[1], find[2]))
 		return retcode, selector
 	} else {
-		println(data)
 		return "9999", "0"
 	}
 }
@@ -420,8 +420,6 @@ func (self *WxWeb) handleMsg(r interface{}) {
 		content = strings.Replace(content, "&lt;", "<", -1)
 		content = strings.Replace(content, "&gt;", ">", -1)
 		content = strings.Replace(content, " ", " ", 1)
-		msgstr := utils.JsonEncode(r)
-		println(msgstr)
 		if msgType == 1 {
 
 		} else if msgType == 42 {
@@ -581,7 +579,6 @@ func (self *WxWeb) Start() {
 		} else {
 			fmt.Println("[*] retcode = " + retcode)
 		}
-		time.Sleep(1 * time.Second)
 	}
 	if self.callback != nil {
 		self.callback.Logout()
