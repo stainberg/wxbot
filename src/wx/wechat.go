@@ -54,7 +54,6 @@ type WxWeb struct {
 	syncHost     string
 	http_client  *http.Client
 	contact      *Contact
-	callback     WxCallback
 	stop         bool
 	stopped      bool
 	fileSerRun   bool
@@ -131,7 +130,7 @@ func (self *WxWeb) genQRcode(args ...interface{}) bool {
 						http.ServeFile(w, req, "qrcode.jpg")
 						return
 					})
-					http.ListenAndServe(":8889", nil)
+					http.ListenAndServe(":" + utils.Conf.HttpConf.FileDownloadPort, nil)
 				}()
 			}
 		}
@@ -580,12 +579,8 @@ func (self *WxWeb) Start() {
 			fmt.Println("[*] retcode = " + retcode)
 		}
 	}
-	if self.callback != nil {
-		self.callback.Logout()
-	}
+	p := map[string]interface{}{}
+	p["status"] = "0"
+	self._post(utils.Conf.WechatConf.LogoutCallbackUrl, p, false)
 	WxClient.stopped = true
-}
-
-func (self *WxWeb) SetCallback(cb WxCallback) {
-	self.callback = cb
 }

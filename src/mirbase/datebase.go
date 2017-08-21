@@ -15,9 +15,9 @@ var (
 
 func InitClient() {
 	client = redis.NewClient(&redis.Options {
-		Addr:     "localhost:8868",
-		Password: "reborn",
-		DB:       0,
+		Addr:     utils.Conf.RedisConf.Host + ":" + utils.Conf.RedisConf.Port,
+		Password: utils.Conf.RedisConf.Password,
+		DB:       utils.Conf.RedisConf.Db,
 	})
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
