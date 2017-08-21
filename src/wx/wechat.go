@@ -35,6 +35,7 @@ func init() {
 	WxClient = new(WxWeb)
 	WxClient.stop = true
 	WxClient.stopped = true
+	WxClient.fileSerRun = false
 }
 
 type WxWeb struct {
@@ -55,7 +56,8 @@ type WxWeb struct {
 	contact      *Contact
 	callback     WxCallback
 	stop         bool
-	stopped       bool
+	stopped      bool
+	fileSerRun   bool
 }
 
 func (self *WxWeb) _unixStr() string {
@@ -120,14 +122,17 @@ func (self *WxWeb) genQRcode(args ...interface{}) bool {
 		if runtime.GOOS == "darwin" {
 			exec.Command("open", path).Run()
 		} else {
-			go func() {
-				fmt.Println("please open on web broswer ip:8889/qr")
-				http.HandleFunc("/qr", func(w http.ResponseWriter, req *http.Request) {
-					http.ServeFile(w, req, "qrcode.jpg")
-					return
-				})
-				http.ListenAndServe(":8889", nil)
-			}()
+			if !self.fileSerRun {
+				go func() {
+					self.fileSerRun = true
+					fmt.Println("please open on web broswer ip:8889/qr")
+					http.HandleFunc("/qr", func(w http.ResponseWriter, req *http.Request) {
+						http.ServeFile(w, req, "qrcode.jpg")
+						return
+					})
+					http.ListenAndServe(":8889", nil)
+				}()
+			}
 		}
 		return true
 	}
