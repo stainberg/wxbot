@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/stainberg/koalart"
-	_ "routers"
 	"mirbase"
+	_ "routers"
 	"wx"
 )
 

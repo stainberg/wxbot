@@ -1,24 +1,24 @@
 package wx
 
 import (
-	"fmt"
-	"time"
-	"net/http"
-	"os"
-	"io/ioutil"
 	"bytes"
-	"net/url"
-	"strconv"
-	"io"
-	"encoding/xml"
-	"strings"
-	"math/rand"
-	"net/http/cookiejar"
-	"utils"
-	"runtime"
-	"os/exec"
 	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
+	"os"
+	"os/exec"
 	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
+	"utils"
 )
 
 const debug = false
@@ -75,7 +75,7 @@ func (self *WxWeb) _run(desc string, f func(...interface{}) bool, args ...interf
 	} else {
 		result = f()
 	}
-	useTime := fmt.Sprintf("%.5f", (float64(time.Now().UnixNano() - start) / 1000000000))
+	useTime := fmt.Sprintf("%.5f", (float64(time.Now().UnixNano()-start) / 1000000000))
 	if result {
 		fmt.Println("成功,用时" + useTime + "秒")
 	} else {
@@ -197,7 +197,7 @@ func (self *WxWeb) _get(urlstr string, jsonFmt bool) (string, error) {
 
 func (self *WxWeb) waitForLogin(tip int) bool {
 	url := "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login"
-	url += "?loginicon=true&tip=0&uuid=" + self.uuid + "&_=" + self._unixStr() + "&r=" + strconv.Itoa(int(time.Now().Unix()) / 1579)
+	url += "?loginicon=true&tip=0&uuid=" + self.uuid + "&_=" + self._unixStr() + "&r=" + strconv.Itoa(int(time.Now().Unix())/1579)
 	data, _ := self._get(url, false)
 	re := regexp.MustCompile(`window.code=(\d+);`)
 	find := re.FindStringSubmatch(data)
@@ -396,7 +396,7 @@ func (self *WxWeb) webwxsync() interface{} {
 	params["SyncKey"] = self.SyncKey
 	params["rr"] = ^int(time.Now().Unix())
 	res, err := self._post(urlstr, params, true)
-	if err != nil{
+	if err != nil {
 		return false
 	}
 	d := utils.JsonDecode(res)

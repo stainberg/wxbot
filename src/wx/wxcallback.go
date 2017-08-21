@@ -1,5 +1,5 @@
 package wx
 
-type WxCallback interface  {
+type WxCallback interface {
 	Logout()
 }

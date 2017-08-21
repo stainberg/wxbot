@@ -1,20 +1,20 @@
 package mirbase
 
 import (
-	"github.com/go-redis/redis"
 	"fmt"
+	"github.com/go-redis/redis"
 	"utils"
 )
 
 var client *redis.Client
 
 var (
-	WX_TOKEN = "WechatToken"
+	WX_TOKEN   = "WechatToken"
 	TOKEN_POLL = "TokenPoll"
 )
 
 func InitClient() {
-	client = redis.NewClient(&redis.Options {
+	client = redis.NewClient(&redis.Options{
 		Addr:     "localhost:8868",
 		Password: "reborn",
 		DB:       0,
