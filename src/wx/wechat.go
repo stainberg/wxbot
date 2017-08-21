@@ -254,8 +254,12 @@ func (self *WxWeb) webwxinit(args ...interface{}) bool {
 	if err != nil {
 		return false
 	}
-	//ioutil.WriteFile("tmp.txt", []byte(res), 777)
-	data := utils.JsonDecode(res).(map[string]interface{})
+	d := utils.JsonDecode(res)
+	switch vtype := d.(type) {
+	case bool:
+		return vtype
+	}
+	data := d.(map[string]interface{})
 	self.User = data["User"].(map[string]interface{})
 	self.SyncKey = data["SyncKey"].(map[string]interface{})
 	self._setsynckey()
@@ -338,42 +342,47 @@ func (self *WxWeb) webwxstatusnotify(args ...interface{}) bool {
 	if err != nil {
 		return false
 	}
-	data := utils.JsonDecode(res).(map[string]interface{})
+	d := utils.JsonDecode(res)
+	switch vtype := d.(type) {
+	case bool:
+		return vtype
+	}
+	data := d.(map[string]interface{})
 	retCode := data["BaseResponse"].(map[string]interface{})["Ret"].(int)
 	return retCode == 0
 }
 
-func (self *WxWeb) webgetchatroommember(chatroomId string) (map[string]string, error) {
-	urlstr := fmt.Sprintf("%s/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s", self.base_uri, self._unixStr(), self.pass_ticket)
-	params := make(map[string]interface{})
-	params["BaseRequest"] = self.BaseRequest
-	params["Count"] = 1
-	params["List"] = []map[string]string{}
-	l := []map[string]string{}
-	params["List"] = append(l, map[string]string{
-		"UserName":   chatroomId,
-		"ChatRoomId": "",
-	})
-	members := []string{}
-	stats := make(map[string]string)
-	res, err := self._post(urlstr, params, true)
-	debugPrint(params)
-	if err != nil {
-		return stats, err
-	}
-	data := utils.JsonDecode(res).(map[string]interface{})
-	RoomContactList := data["ContactList"].([]interface{})[0].(map[string]interface{})["MemberList"]
-	for _, v := range RoomContactList.([]interface{}) {
-		if m, ok := v.([]interface{}); ok {
-			for _, s := range m {
-				members = append(members, s.(map[string]interface{})["UserName"].(string))
-			}
-		} else {
-			members = append(members, v.(map[string]interface{})["UserName"].(string))
-		}
-	}
-	return stats, nil
-}
+//func (self *WxWeb) webgetchatroommember(chatroomId string) (map[string]string, error) {
+//	urlstr := fmt.Sprintf("%s/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s", self.base_uri, self._unixStr(), self.pass_ticket)
+//	params := make(map[string]interface{})
+//	params["BaseRequest"] = self.BaseRequest
+//	params["Count"] = 1
+//	params["List"] = []map[string]string{}
+//	l := []map[string]string{}
+//	params["List"] = append(l, map[string]string{
+//		"UserName":   chatroomId,
+//		"ChatRoomId": "",
+//	})
+//	members := []string{}
+//	stats := make(map[string]string)
+//	res, err := self._post(urlstr, params, true)
+//	debugPrint(params)
+//	if err != nil {
+//		return stats, err
+//	}
+//	data := utils.JsonDecode(res).(map[string]interface{})
+//	RoomContactList := data["ContactList"].([]interface{})[0].(map[string]interface{})["MemberList"]
+//	for _, v := range RoomContactList.([]interface{}) {
+//		if m, ok := v.([]interface{}); ok {
+//			for _, s := range m {
+//				members = append(members, s.(map[string]interface{})["UserName"].(string))
+//			}
+//		} else {
+//			members = append(members, v.(map[string]interface{})["UserName"].(string))
+//		}
+//	}
+//	return stats, nil
+//}
 
 func (self *WxWeb) webwxsync() interface{} {
 	urlstr := fmt.Sprintf("%s/webwxsync?sid=%s&skey=%s&pass_ticket=%s", self.base_uri, self.sid, self.skey, self.pass_ticket)
@@ -385,7 +394,12 @@ func (self *WxWeb) webwxsync() interface{} {
 	if err != nil{
 		return false
 	}
-	data := utils.JsonDecode(res).(map[string]interface{})
+	d := utils.JsonDecode(res)
+	switch vtype := d.(type) {
+	case bool:
+		return vtype
+	}
+	data := d.(map[string]interface{})
 	retCode := data["BaseResponse"].(map[string]interface{})["Ret"].(int)
 	if retCode == 0 {
 		self.SyncKey = data["SyncKey"].(map[string]interface{})
