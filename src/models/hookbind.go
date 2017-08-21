@@ -1,11 +1,11 @@
 package models
 
 import (
+	"fmt"
 	"github.com/stainberg/koalart"
-	"net/http"
 	"io"
 	"mirbase"
-	"fmt"
+	"net/http"
 )
 
 type HookBindController struct {
@@ -17,14 +17,14 @@ func (k *HookBindController) URLMapping() {
 	k.Mapping(koala.POST, k.Post)
 }
 
-func (c *HookBindController) Get()  {
+func (c *HookBindController) Get() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Query.Get("token")
 	_, name := mirbase.FindNameByToken(token)
 	io.WriteString(c.Ctx.Writer, name)
 }
 
-func (c *HookBindController) Post()  {
+func (c *HookBindController) Post() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	name := c.Ctx.Form.Get("name")
 	token := c.Ctx.Form.Get("token")

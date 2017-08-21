@@ -1,15 +1,15 @@
 package mirbase
 
 import (
-	"github.com/go-redis/redis"
 	"fmt"
+	"github.com/go-redis/redis"
 	"utils"
 )
 
 var client *redis.Client
 
 var (
-	WX_TOKEN = "WechatToken"
+	WX_TOKEN   = "WechatToken"
 	TOKEN_POLL = "TokenPoll"
 )
 

@@ -2,11 +2,11 @@ package models
 
 import (
 	"github.com/stainberg/koalart"
-	"net/http"
 	"io"
 	"mirbase"
-	"wx"
+	"net/http"
 	"time"
+	"wx"
 )
 
 type WxLoginController struct {
@@ -17,7 +17,7 @@ func (k *WxLoginController) URLMapping() {
 	k.Mapping(koala.POST, k.Post)
 }
 
-func (c *WxLoginController) Post()  {
+func (c *WxLoginController) Post() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Form.Get("token")
 	find, _ := mirbase.FindNameByToken(token)

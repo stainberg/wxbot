@@ -2,9 +2,9 @@ package models
 
 import (
 	"github.com/stainberg/koalart"
-	"net/http"
 	"io"
 	"mirbase"
+	"net/http"
 )
 
 type HookKeyController struct {
@@ -16,7 +16,7 @@ func (k *HookKeyController) URLMapping() {
 	k.Mapping(koala.POST, k.Post)
 }
 
-func (c *HookKeyController) Get()  {
+func (c *HookKeyController) Get() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Request.Header.Get("token")
 	if token == "YenStainberg" {
@@ -27,7 +27,7 @@ func (c *HookKeyController) Get()  {
 	}
 }
 
-func (c *HookKeyController) Post()  {
+func (c *HookKeyController) Post() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	token := c.Ctx.Request.Header.Get("token")
 	if token == "YenStainberg" {

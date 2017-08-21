@@ -1,15 +1,15 @@
 package utils
 
 import (
-	"unsafe"
-	"time"
-	"strconv"
-	"encoding/json"
-	"strings"
-	"fmt"
-	"encoding/hex"
-	"encoding/base64"
 	"crypto/md5"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+	"unsafe"
 )
 
 func StringBytes(s string) []byte {
@@ -87,7 +87,7 @@ func Base64Encode(src string) string {
 	return dst
 }
 
-func Base64Decode(src string) (string) {
+func Base64Decode(src string) string {
 	var missing = (4 - len(src)%4) % 4
 	src += strings.Repeat("=", missing)
 	db, err := base64.URLEncoding.DecodeString(src)
