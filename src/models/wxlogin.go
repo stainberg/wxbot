@@ -26,9 +26,8 @@ func (c *WxLoginController) Post() {
 	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	id := c.Ctx.Form.Get("id")
-	find, name := mirbase.FindNameById(id)
+	find, _ := mirbase.FindNameById(id)
 	if find {
-		println(name)
 		wx.WxClient.Stop()
 		for !wx.WxClient.Stopped() {
 			time.Sleep(1 * time.Millisecond)
