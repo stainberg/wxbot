@@ -74,14 +74,14 @@ func LoadConfig(file string) {
 	}
 	Conf.RedisConf.Db = index
 
-	println(Conf.HttpConf.RestAPIPort)
-	println(Conf.HttpConf.FileDownloadPort)
-	println(Conf.HttpConf.Token)
-	println(Conf.WechatConf.LogoutCallbackUrl)
-	println(Conf.RedisConf.Host)
-	println(Conf.RedisConf.Port)
-	println(Conf.RedisConf.Password)
-	println(Conf.RedisConf.Db)
+	println("RestAPI Port:" + Conf.HttpConf.RestAPIPort)
+	println("FileDownload Port:" + Conf.HttpConf.FileDownloadPort)
+	println("Token:" + Conf.HttpConf.Token)
+	println("LogoutCallbackUrl:" + Conf.WechatConf.LogoutCallbackUrl)
+	println("Redis Host:" + Conf.RedisConf.Host)
+	println("Redis Post:" + Conf.RedisConf.Port)
+	println("Redis Password:" + Conf.RedisConf.Password)
+	println("Redis DB:" + strconv.Itoa(Conf.RedisConf.Db))
 }
 
 func getValue(key string, m map[string]string, def string) string {

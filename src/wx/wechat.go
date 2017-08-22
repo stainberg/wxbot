@@ -45,7 +45,6 @@ type WxWeb struct {
 	uin          string
 	sid          string
 	skey         string
-	pass_ticket  string
 	deviceId     string
 	SyncKey      map[string]interface{}
 	synckey      string
@@ -150,8 +149,9 @@ func (self *WxWeb) _post(urlstr string, params map[string]interface{}, jsonFmt b
 			return "", err
 		}
 		request.Header.Set("Content-Type", "application/json;charset=utf-8")
+		request.Header.Add("Origin", "https://wx.qq.com")
 		request.Header.Add("Referer", "https://wx.qq.com/")
-		request.Header.Add("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36")
+		request.Header.Add("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36")
 		resp, err = self.http_client.Do(request)
 		// resp, err = self.http_client.Post(urlstr, "application/json;charset=utf-8", requestBody)
 	} else {
@@ -242,7 +242,6 @@ func (self *WxWeb) login(args ...interface{}) bool {
 	self.skey = v.Skey
 	self.sid = v.Wxsid
 	self.uin = v.Wxuin
-	self.pass_ticket = v.Pass_ticket
 	self.BaseRequest = make(map[string]interface{})
 	self.BaseRequest["Uin"], _ = strconv.Atoi(v.Wxuin)
 	self.BaseRequest["Sid"] = v.Wxsid
@@ -252,7 +251,7 @@ func (self *WxWeb) login(args ...interface{}) bool {
 }
 
 func (self *WxWeb) webwxinit(args ...interface{}) bool {
-	wxurl := fmt.Sprintf("%s/webwxinit?pass_ticket=%s&skey=%s&r=%s", self.base_uri, self.pass_ticket, self.skey, self._unixStr())
+	wxurl := fmt.Sprintf("%s/webwxinit?r=%s", self.base_uri, self._unixStr())
 	params := make(map[string]interface{})
 	params["BaseRequest"] = self.BaseRequest
 	res, err := self._post(wxurl, params, true)
@@ -289,9 +288,9 @@ func (self *WxWeb) synccheck() (string, string) {
 	urlstr := fmt.Sprintf("https://%s/cgi-bin/mmwebwx-bin/synccheck", self.syncHost)
 	v := url.Values{}
 	v.Add("r", self._unixStr())
+	v.Add("skey", self.skey)
 	v.Add("sid", self.sid)
 	v.Add("uin", self.uin)
-	v.Add("skey", self.skey)
 	v.Add("deviceid", self.deviceId)
 	v.Add("synckey", self.synckey)
 	v.Add("_", self._unixStr())
@@ -335,7 +334,7 @@ func (self *WxWeb) testsynccheck(args ...interface{}) bool {
 }
 
 func (self *WxWeb) webwxstatusnotify(args ...interface{}) bool {
-	urlstr := fmt.Sprintf("%s/webwxstatusnotify?lang=zh_CN&pass_ticket=%s", self.base_uri, self.pass_ticket)
+	urlstr := fmt.Sprintf("%s/webwxstatusnotify", self.base_uri)
 	params := make(map[string]interface{})
 	params["BaseRequest"] = self.BaseRequest
 	params["Code"] = 3
@@ -356,40 +355,8 @@ func (self *WxWeb) webwxstatusnotify(args ...interface{}) bool {
 	return retCode == 0
 }
 
-//func (self *WxWeb) webgetchatroommember(chatroomId string) (map[string]string, error) {
-//	urlstr := fmt.Sprintf("%s/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s", self.base_uri, self._unixStr(), self.pass_ticket)
-//	params := make(map[string]interface{})
-//	params["BaseRequest"] = self.BaseRequest
-//	params["Count"] = 1
-//	params["List"] = []map[string]string{}
-//	l := []map[string]string{}
-//	params["List"] = append(l, map[string]string{
-//		"UserName":   chatroomId,
-//		"ChatRoomId": "",
-//	})
-//	members := []string{}
-//	stats := make(map[string]string)
-//	res, err := self._post(urlstr, params, true)
-//	debugPrint(params)
-//	if err != nil {
-//		return stats, err
-//	}
-//	data := utils.JsonDecode(res).(map[string]interface{})
-//	RoomContactList := data["ContactList"].([]interface{})[0].(map[string]interface{})["MemberList"]
-//	for _, v := range RoomContactList.([]interface{}) {
-//		if m, ok := v.([]interface{}); ok {
-//			for _, s := range m {
-//				members = append(members, s.(map[string]interface{})["UserName"].(string))
-//			}
-//		} else {
-//			members = append(members, v.(map[string]interface{})["UserName"].(string))
-//		}
-//	}
-//	return stats, nil
-//}
-
 func (self *WxWeb) webwxsync() interface{} {
-	urlstr := fmt.Sprintf("%s/webwxsync?sid=%s&skey=%s&pass_ticket=%s", self.base_uri, self.sid, self.skey, self.pass_ticket)
+	urlstr := fmt.Sprintf("%s/webwxsync?sid=%s&skey=%s", self.base_uri, self.sid, self.skey)
 	params := make(map[string]interface{})
 	params["BaseRequest"] = self.BaseRequest
 	params["SyncKey"] = self.SyncKey
@@ -457,10 +424,9 @@ func (self *WxWeb) handleMsg(r interface{}) {
 }
 
 func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
-	urlstr := fmt.Sprintf("%s/webwxsendmsg?sid=%s&skey=%s&pass_ticket=%s", self.base_uri, self.sid, self.skey, self.pass_ticket)
-	clientMsgId := self._unixStr() + "0" + strconv.Itoa(rand.Int())[3:6]
+	urlstr := fmt.Sprintf("%s/webwxsendmsg", self.base_uri)
+	clientMsgId := strconv.Itoa(int(time.Now().UnixNano()))[:13] + "0" + strconv.Itoa(rand.Int())[3:6]
 	params := make(map[string]interface{})
-	params["BaseRequest"] = self.BaseRequest
 	msg := make(map[string]interface{})
 	msg["Type"] = 1
 	msg["Content"] = message
@@ -469,6 +435,8 @@ func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
 	msg["LocalID"] = clientMsgId
 	msg["ClientMsgId"] = clientMsgId
 	params["Msg"] = msg
+	params["Scene"] = 0
+	params["BaseRequest"] = self.BaseRequest
 	data, err := self._post(urlstr, params, true)
 	if err != nil {
 		debugPrint(err)
@@ -562,8 +530,6 @@ func (self *WxWeb) Start() {
 				default:
 					self.handleMsg(r)
 				}
-			} else if selector == "0" {
-
 			} else if selector == "6" || selector == "4" {
 				self.webwxsync()
 			}
@@ -577,6 +543,7 @@ func (self *WxWeb) Start() {
 			break
 		} else {
 			fmt.Println("[*] retcode = " + retcode)
+			self.webwxsync()
 		}
 	}
 	p := map[string]interface{}{}
