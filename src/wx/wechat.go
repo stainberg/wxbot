@@ -580,7 +580,7 @@ func (self *WxWeb) Start() {
 		}
 	}
 	p := map[string]interface{}{}
-	p["status"] = "0"
+	p["status"] = "-1"
 	self._post(utils.Conf.WechatConf.LogoutCallbackUrl, p, false)
 	WxClient.stopped = true
 }
