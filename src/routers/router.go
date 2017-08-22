@@ -9,7 +9,7 @@ func init() {
 	ns := koala.NewNamespace("v1",
 		koala.NSNamespace("wechat",
 			koala.NSNamespace("hook",
-				koala.NSNamespace("key",
+				koala.NSNamespace("id",
 					koala.NSController(new(models.HookKeyController)),
 				),
 				koala.NSNamespace("bind",
