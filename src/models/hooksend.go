@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"wx"
+	"utils"
 )
 
 type HookSendController struct {
@@ -18,17 +19,22 @@ func (k *HookSendController) URLMapping() {
 }
 
 func (c *HookSendController) Post() {
+	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
+		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
+		io.WriteString(c.Ctx.Writer, "illegal token")
+		return
+	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	message := c.Ctx.Form.Get("message")
 	s := strings.Split(c.Ctx.Request.URL.Path, "/")
-	token := s[len(s)-2]
-	b, name := mirbase.FindNameByToken(token)
+	id := s[len(s)-2]
+	b, name := mirbase.FindNameById(id)
 	if !b {
-		io.WriteString(c.Ctx.Writer, name)
+		io.WriteString(c.Ctx.Writer, `name or id not bind`)
 		return
 	}
 	if message == "" {
-		io.WriteString(c.Ctx.Writer, `illegal name or token`)
+		io.WriteString(c.Ctx.Writer, `can't send nil message`)
 		return
 	}
 	status := wx.WxClient.SendMessage(message, name)

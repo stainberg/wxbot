@@ -79,6 +79,13 @@ func SecurityMD5(src string) string {
 	return strings.ToLower(hex.EncodeToString(hs.Sum(nil)))
 }
 
+func CheckToken(p string) bool {
+	if p == Conf.HttpConf.Token {
+		return true
+	}
+	return false
+}
+
 func Base64Encode(src string) string {
 	bs := base64.URLEncoding.EncodeToString(StringBytes(src))
 	dst := strings.Replace(string(bs), "/", "_", -1)

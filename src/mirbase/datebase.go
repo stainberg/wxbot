@@ -9,8 +9,8 @@ import (
 var client *redis.Client
 
 var (
-	WX_TOKEN   = "WechatToken"
-	TOKEN_POLL = "TokenPoll"
+	WX_ID = "WechatId"
+	ID_POLL = "Ids"
 )
 
 func InitClient() {
@@ -19,57 +19,59 @@ func InitClient() {
 		Password: utils.Conf.RedisConf.Password,
 		DB:       utils.Conf.RedisConf.Db,
 	})
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-}
-
-func NewToken() string {
-	token := utils.SecurityMD5(utils.GenerateId())
-	client.SAdd(TOKEN_POLL, token).Result()
-	return token
-}
-
-func GetToken() string {
-	token, err := client.SPop(TOKEN_POLL).Result()
+	_, err := client.Ping().Result()
 	if err != nil {
-		return NewToken()
+		fmt.Println(err.Error())
 	}
-	return token
 }
 
-func BindTokenToName(token, name string) (bool, string) {
-	b, _ := client.HExists(WX_TOKEN, token).Result()
+func NewId() string {
+	id := utils.SecurityMD5(utils.GenerateId())
+	client.SAdd(ID_POLL, id).Result()
+	return id
+}
+
+func GetId() string {
+	id, err := client.SPop(ID_POLL).Result()
+	if err != nil {
+		return NewId()
+	}
+	return id
+}
+
+func BindIdToName(id, name string) (bool, string) {
+	b, _ := client.HExists(WX_ID, id).Result()
 	if b {
-		_, err := client.HSet(WX_TOKEN, token, name).Result()
+		_, err := client.HSet(WX_ID, id, name).Result()
 		if err != nil {
 			return false, err.Error()
 		}
 		return true, "ok"
 	}
-	in, err := client.SIsMember(TOKEN_POLL, token).Result()
+	in, err := client.SIsMember(ID_POLL, id).Result()
 	if err != nil {
 		return false, err.Error()
 	}
 	if !in {
-		return false, "invalid token"
+		return false, "invalid id"
 	}
-	_, err = client.HSet(WX_TOKEN, token, name).Result()
+	_, err = client.HSet(WX_ID, id, name).Result()
 	if err != nil {
 		return false, err.Error()
 	}
-	client.SRem(TOKEN_POLL, token).Result()
+	client.SRem(ID_POLL, id).Result()
 	return true, "ok"
 }
 
-func FindNameByToken(token string) (bool, string) {
-	b, err := client.HExists(WX_TOKEN, token).Result()
+func FindNameById(id string) (bool, string) {
+	b, err := client.HExists(WX_ID, id).Result()
 	if err != nil {
 		return false, err.Error()
 	}
 	if !b {
-		return false, "did not bind token to any name"
+		return false, "did not bind id to any name"
 	}
-	name, err := client.HGet(WX_TOKEN, token).Result()
+	name, err := client.HGet(WX_ID, id).Result()
 	if err != nil {
 		return false, err.Error()
 	}

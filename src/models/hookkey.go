@@ -5,6 +5,7 @@ import (
 	"io"
 	"mirbase"
 	"net/http"
+	"utils"
 )
 
 type HookKeyController struct {
@@ -13,27 +14,14 @@ type HookKeyController struct {
 
 func (k *HookKeyController) URLMapping() {
 	k.Mapping(koala.GET, k.Get)
-	k.Mapping(koala.POST, k.Post)
 }
 
 func (c *HookKeyController) Get() {
-	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	token := c.Ctx.Request.Header.Get("token")
-	if token == "YenStainberg" {
-		t := mirbase.GetToken()
-		io.WriteString(c.Ctx.Writer, t)
-	} else {
-		io.WriteString(c.Ctx.Writer, `token invalid`)
+	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
+		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
+		io.WriteString(c.Ctx.Writer, "illegal token")
+		return
 	}
-}
-
-func (c *HookKeyController) Post() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	token := c.Ctx.Request.Header.Get("token")
-	if token == "YenStainberg" {
-		t := mirbase.NewToken()
-		io.WriteString(c.Ctx.Writer, t)
-	} else {
-		io.WriteString(c.Ctx.Writer, `token invalid`)
-	}
+	io.WriteString(c.Ctx.Writer, mirbase.GetId())
 }

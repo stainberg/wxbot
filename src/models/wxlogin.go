@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 	"wx"
+	"utils"
 )
 
 type WxLoginController struct {
@@ -18,10 +19,16 @@ func (k *WxLoginController) URLMapping() {
 }
 
 func (c *WxLoginController) Post() {
+	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
+		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
+		io.WriteString(c.Ctx.Writer, "illegal token")
+		return
+	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	token := c.Ctx.Form.Get("token")
-	find, _ := mirbase.FindNameByToken(token)
+	id := c.Ctx.Form.Get("id")
+	find, name := mirbase.FindNameById(id)
 	if find {
+		println(name)
 		wx.WxClient.Stop()
 		for !wx.WxClient.Stopped() {
 			time.Sleep(1 * time.Millisecond)
@@ -29,6 +36,7 @@ func (c *WxLoginController) Post() {
 		go wx.WxClient.Start()
 		io.WriteString(c.Ctx.Writer, `please open on web broswer http://zuluki.com:8889/qr`)
 		return
+	} else {
+		io.WriteString(c.Ctx.Writer, `illegal id`)
 	}
-	io.WriteString(c.Ctx.Writer, `illegal token`)
 }
