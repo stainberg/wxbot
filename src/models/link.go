@@ -25,5 +25,5 @@ func (c *LinkController) Get() {
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	url := c.Ctx.Query.Get("url")
 	link := mirbase.SaveShortLink(url)
-	io.WriteString(c.Ctx.Writer, link)
+	io.WriteString(c.Ctx.Writer, c.Ctx.Request.Host + "/" + link)
 }

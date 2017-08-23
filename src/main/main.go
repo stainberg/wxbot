@@ -7,6 +7,7 @@ import (
 	"utils"
 	"mirbase"
 	"github.com/stainberg/koalart"
+	"wx"
 )
 
 func main() {
@@ -18,8 +19,8 @@ func main() {
 		panic(errors.New("params error"))
 	}
 	mirbase.InitClient()
-	//go func() {
-	//	wx.WxClient.Start()
-	//}()
+	go func() {
+		wx.WxClient.Start()
+	}()
 	koala.Run(utils.Conf.HttpConf.RestAPIPort)
 }

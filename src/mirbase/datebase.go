@@ -3,6 +3,7 @@ package mirbase
 import (
 	"github.com/go-redis/redis"
 	"utils"
+	"math/rand"
 )
 
 var client *redis.Client
@@ -10,8 +11,19 @@ var client *redis.Client
 var (
 	WX_ID = "WechatId"
 	ID_POLL = "Ids"
-	LINK = "Link"
+	LINK_URL = "LinkUrl"
+	URL_LINK = "UrlLink"
 )
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890+-=_")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
 
 func InitClient() {
 	client = redis.NewClient(&redis.Options {
@@ -79,11 +91,32 @@ func FindNameById(id string) (bool, string) {
 }
 
 func SaveShortLink(url string) string {
-	return url
+	has, _ := client.HExists(URL_LINK, url).Result()
+	if has {
+		k, _ := client.HGet(URL_LINK, url).Result()
+		return k
+	}
+	key := getKey()
+	client.HSet(LINK_URL, key, url).Result()
+	client.HSet(URL_LINK, url, key).Result()
+	return key
 }
 
-func GetLink(url string) string {
-return url
+func getKey() string {
+	key := randSeq(4)
+	result, err := client.HExists(LINK_URL, key).Result()
+	if err != nil {
+		return getKey()
+	}
+	if result {
+		return getKey()
+	}
+	return key
+}
+
+func GetLink(key string) string {
+	url, _ := client.HGet(LINK_URL, key).Result()
+	return url
 }
 
 

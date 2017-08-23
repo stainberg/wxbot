@@ -27,10 +27,11 @@ func init() {
 		),
 		koala.NSNamespace("link",
 			koala.NSController(new(models.LinkController)),
-			koala.NSNamespace(":id",
-				koala.NSController(new(models.UrlController)),
-			),
 		),
 	)
+	nsId := koala.NewNamespace(":id",
+		koala.NSController(new(models.UrlController)),
+	)
 	koala.RegisterNamespace(ns)
+	koala.RegisterNamespace(nsId)
 }

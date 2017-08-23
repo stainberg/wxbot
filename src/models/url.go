@@ -2,10 +2,9 @@ package models
 
 import (
 	"github.com/stainberg/koalart"
-	"io"
 	"net/http"
-	"utils"
 	"strings"
+	"mirbase"
 )
 
 type UrlController struct {
@@ -17,15 +16,13 @@ func (k *UrlController) URLMapping() {
 }
 
 func (c *UrlController) Get() {
-	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
-		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
-		io.WriteString(c.Ctx.Writer, "illegal token")
-		return
-	}
-	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	s := strings.Split(c.Ctx.Request.URL.Path, "/")
 	id := s[len(s) - 1]
+	url := mirbase.GetLink(id)
+	if len(url) > 0 {
+		http.Redirect(c.Ctx.Writer, c.Ctx.Request, url, http.StatusMovedPermanently)
+	} else {
+		c.Ctx.Writer.WriteHeader(http.StatusNotFound)
+	}
 
-
-	io.WriteString(c.Ctx.Writer, "UrlController id = " + id)
 }
