@@ -4,6 +4,8 @@ import (
 	"github.com/go-redis/redis"
 	"utils"
 	"math/rand"
+	"time"
+	"strconv"
 )
 
 var client *redis.Client
@@ -13,6 +15,7 @@ var (
 	ID_POLL = "Ids"
 	LINK_URL = "LinkUrl"
 	URL_LINK = "UrlLink"
+	URL_EXPIRED = "UrlExpired"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890+-=_")
@@ -98,18 +101,31 @@ func SaveShortLink(url string) string {
 	}
 	key := getKey()
 	client.HSet(LINK_URL, key, url).Result()
+	client.HSet(URL_EXPIRED, key, time.Now().Unix()).Result()
 	client.HSet(URL_LINK, url, key).Result()
 	return key
 }
 
 func getKey() string {
 	key := randSeq(4)
-	result, err := client.HExists(LINK_URL, key).Result()
+	result, err := client.HExists(URL_EXPIRED, key).Result()
 	if err != nil {
 		return getKey()
 	}
 	if result {
-		return getKey()
+		t, err := client.HGet(URL_EXPIRED, key).Result()
+		if err != nil {
+			return getKey()
+		}
+		tm, err := strconv.ParseInt(t, 10, len(t))
+		if err != nil {
+			return getKey()
+		}
+		if time.Now().Unix() - tm > 3600 * 24 * 30 {
+			return key
+		} else {
+			return getKey()
+		}
 	}
 	return key
 }
