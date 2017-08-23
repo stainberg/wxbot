@@ -25,6 +25,12 @@ func init() {
 				koala.NSController(new(models.WxLoginController)),
 			),
 		),
+		koala.NSNamespace("link",
+			koala.NSController(new(models.LinkController)),
+			koala.NSNamespace(":id",
+				koala.NSController(new(models.UrlController)),
+			),
+		),
 	)
 	koala.RegisterNamespace(ns)
 }

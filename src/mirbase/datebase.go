@@ -10,6 +10,7 @@ var client *redis.Client
 var (
 	WX_ID = "WechatId"
 	ID_POLL = "Ids"
+	LINK = "Link"
 )
 
 func InitClient() {
@@ -76,3 +77,13 @@ func FindNameById(id string) (bool, string) {
 	}
 	return true, name
 }
+
+func SaveShortLink(url string) string {
+	return url
+}
+
+func GetLink(url string) string {
+return url
+}
+
+

@@ -25,8 +25,8 @@ func (c *HookBindController) Get() {
 		return
 	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	token := c.Ctx.Query.Get("id")
-	_, name := mirbase.FindNameById(token)
+	id := c.Ctx.Query.Get("id")
+	_, name := mirbase.FindNameById(id)
 	io.WriteString(c.Ctx.Writer, name)
 }
 
