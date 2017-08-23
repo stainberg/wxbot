@@ -37,10 +37,10 @@ func (c *HookSendController) Post() {
 		io.WriteString(c.Ctx.Writer, `can't send nil message`)
 		return
 	}
-	status := wx.WxClient.SendMessage(message, name)
+	status, resp := wx.WxClient.SendMessage(message, name)
 	if status {
-		io.WriteString(c.Ctx.Writer, `send ok`)
+		io.WriteString(c.Ctx.Writer, `send ok msg = ` + resp)
 	} else {
-		io.WriteString(c.Ctx.Writer, `send fail`)
+		io.WriteString(c.Ctx.Writer, `send fail msg = ` + resp)
 	}
 }

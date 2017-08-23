@@ -1,7 +1,6 @@
 package mirbase
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
 	"utils"
 )
@@ -21,7 +20,7 @@ func InitClient() {
 	})
 	_, err := client.Ping().Result()
 	if err != nil {
-		fmt.Println(err.Error())
+		utils.Log("Database InitClient", err.Error())
 	}
 }
 

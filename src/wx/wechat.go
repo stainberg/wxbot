@@ -21,14 +21,6 @@ import (
 	"utils"
 )
 
-const debug = false
-
-func debugPrint(content interface{}) {
-	if debug == true {
-		fmt.Println(content)
-	}
-}
-
 var WxClient *WxWeb
 
 func init() {
@@ -64,7 +56,7 @@ func (self *WxWeb) _unixStr() string {
 
 func (self *WxWeb) _run(desc string, f func(...interface{}) bool, args ...interface{}) {
 	start := time.Now().UnixNano()
-	fmt.Print(desc)
+	utils.Log("WxChat _run", desc)
 	var result bool
 	if len(args) > 1 {
 		result = f(args)
@@ -75,9 +67,9 @@ func (self *WxWeb) _run(desc string, f func(...interface{}) bool, args ...interf
 	}
 	useTime := fmt.Sprintf("%.5f", (float64(time.Now().UnixNano()-start) / 1000000000))
 	if result {
-		fmt.Println("成功,用时" + useTime + "秒")
+		utils.Log("WxChat _run", "成功,用时" + useTime + "秒")
 	} else {
-		fmt.Println("失败\n[*] 退出程序")
+		utils.Log("WxChat _run", "失败\n[*] 退出程序")
 		os.Exit(1)
 	}
 }
@@ -124,7 +116,6 @@ func (self *WxWeb) genQRcode(args ...interface{}) bool {
 			if !self.fileSerRun {
 				go func() {
 					self.fileSerRun = true
-					fmt.Println("please open on web broswer ip:8889/qr")
 					http.HandleFunc("/qr", func(w http.ResponseWriter, req *http.Request) {
 						http.ServeFile(w, req, "qrcode.jpg")
 						return
@@ -142,7 +133,6 @@ func (self *WxWeb) _post(urlstr string, params map[string]interface{}, jsonFmt b
 	var resp *http.Response
 	if jsonFmt == true {
 		jsonPost := utils.JsonEncode(params)
-		debugPrint(jsonPost)
 		requestBody := bytes.NewBuffer([]byte(jsonPost))
 		request, err := http.NewRequest("POST", urlstr, requestBody)
 		if err != nil {
@@ -163,12 +153,12 @@ func (self *WxWeb) _post(urlstr string, params map[string]interface{}, jsonFmt b
 	}
 
 	if err != nil || resp == nil {
-		fmt.Println(err)
+		utils.Log("WxChat _post", err.Error())
 		return "", err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		utils.Log("WxChat _post", err.Error())
 		return "", err
 	} else {
 		defer resp.Body.Close()
@@ -217,9 +207,9 @@ func (self *WxWeb) waitForLogin(tip int) bool {
 			}
 			return false
 		} else if code == "408" {
-			fmt.Println("[登陆超时]")
+			utils.Log("WxChat waitForLogin", "[登陆超时]")
 		} else {
-			fmt.Println("[登陆异常]")
+			utils.Log("WxChat waitForLogin", "[登陆异常]")
 		}
 	}
 	return false
@@ -236,7 +226,7 @@ func (self *WxWeb) login(args ...interface{}) bool {
 	v := Result{}
 	err := xml.Unmarshal([]byte(data), &v)
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		utils.Log("Wechat", err.Error())
 		return false
 	}
 	self.skey = v.Skey
@@ -281,7 +271,6 @@ func (self *WxWeb) _setsynckey() {
 		keys = append(keys, key+"_"+value)
 	}
 	self.synckey = strings.Join(keys, "|")
-	debugPrint(self.synckey)
 }
 
 func (self *WxWeb) synccheck() (string, string) {
@@ -302,7 +291,6 @@ func (self *WxWeb) synccheck() (string, string) {
 	if len(find) > 2 {
 		retcode := find[1]
 		selector := find[2]
-		debugPrint(fmt.Sprintf("retcode:%s, selector:%s", find[1], find[2]))
 		return retcode, selector
 	} else {
 		return "9999", "0"
@@ -423,7 +411,7 @@ func (self *WxWeb) handleMsg(r interface{}) {
 	}
 }
 
-func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
+func (self *WxWeb) webwxsendmsg(message string, toUseNname string) (bool, string) {
 	urlstr := fmt.Sprintf("%s/webwxsendmsg", self.base_uri)
 	clientMsgId := strconv.Itoa(int(time.Now().UnixNano()))[:13] + "0" + strconv.Itoa(rand.Int())[3:6]
 	params := make(map[string]interface{})
@@ -439,11 +427,9 @@ func (self *WxWeb) webwxsendmsg(message string, toUseNname string) bool {
 	params["BaseRequest"] = self.BaseRequest
 	data, err := self._post(urlstr, params, true)
 	if err != nil {
-		debugPrint(err)
-		return false
+		return false, data
 	} else {
-		debugPrint(data)
-		return true
+		return true, data
 	}
 }
 
@@ -477,7 +463,7 @@ func (self *WxWeb) GetContact() {
 	go self.webwxgetcontact()
 }
 
-func (self *WxWeb) SendMessage(message string, nickname string) bool {
+func (self *WxWeb) SendMessage(message string, nickname string) (bool, string) {
 	toUseName := self.getUserIdByNickName(nickname)
 	if toUseName == nil {
 		return self.webwxsendmsg(message, nickname)
@@ -509,7 +495,7 @@ func (self *WxWeb) Start() {
 		if self.waitForLogin(1) == false {
 			continue
 		}
-		fmt.Println("[*] 请在手机上点击确认以登录 ... ")
+		utils.Log("WxChat Start", "[*] 请在手机上点击确认以登录 ... ")
 		if self.waitForLogin(0) == false {
 			continue
 		}
@@ -534,15 +520,15 @@ func (self *WxWeb) Start() {
 				self.webwxsync()
 			}
 		} else if retcode == "1101" {
-			fmt.Println("[*] 重新登陆 在其他地方登录")
+			utils.Log("WxChat Start", "[*] 重新登陆 在其他地方登录")
 			WxClient.stop = true
 			break
 		} else if retcode == "1100" {
-			fmt.Println("[*] 重新登陆 登出了微信")
+			utils.Log("WxChat Start", "[*] 重新登陆 登出了微信")
 			WxClient.stop = true
 			break
 		} else {
-			fmt.Println("[*] retcode = " + retcode)
+			utils.Log("WxChat Start", "[*] retcode = " + retcode)
 			self.webwxsync()
 		}
 	}

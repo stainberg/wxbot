@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +36,8 @@ func JsonDecode(jsonStr string) interface{} {
 	var f interface{}
 	err := json.Unmarshal([]byte(jsonStr), &f)
 	if err != nil {
-		fmt.Println(jsonStr)
+		Log("Utils JsonDecode", err.Error())
+		Log("Utils JsonDecode", jsonStr)
 		return false
 	}
 	return float2Int(f)
