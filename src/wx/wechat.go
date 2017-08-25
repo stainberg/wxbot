@@ -152,7 +152,7 @@ func (self *WxWeb) _post(urlstr string, params map[string]interface{}, jsonFmt b
 		resp, err = self.http_client.PostForm(urlstr, v)
 	}
 
-	if err != nil || resp == nil {
+	if err != nil {
 		utils.Log("WxChat _post", err.Error())
 		return "", err
 	}
@@ -525,6 +525,10 @@ func (self *WxWeb) Start() {
 			break
 		} else if retcode == "1100" {
 			utils.Log("WxChat Start", "[*] 重新登陆 登出了微信")
+			WxClient.stop = true
+			break
+		} else if retcode == "1102" {
+			utils.Log("WxChat Start", "[*] 重新登陆 Cokice过期")
 			WxClient.stop = true
 			break
 		} else {
