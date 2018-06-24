@@ -28,13 +28,14 @@ func init() {
 	WxClient.stop = true
 	WxClient.stopped = true
 	WxClient.fileSerRun = false
+	WxClient.login_in = false
 }
 
 type WxWeb struct {
 	uuid         string
 	base_uri     string
 	redirect_uri string
-	uin          string
+	Uin          string
 	sid          string
 	skey         string
 	deviceId     string
@@ -48,6 +49,7 @@ type WxWeb struct {
 	stop         bool
 	stopped      bool
 	fileSerRun   bool
+	login_in     bool
 }
 
 func (self *WxWeb) _unixStr() string {
@@ -69,8 +71,9 @@ func (self *WxWeb) _run(desc string, f func(...interface{}) bool, args ...interf
 	if result {
 		utils.Log("WxChat _run", "成功,用时" + useTime + "秒")
 	} else {
-		utils.Log("WxChat _run", "失败\n[*] 退出程序")
-		os.Exit(1)
+		utils.Log("WxChat _run", "失败")
+		self.Stop()
+
 	}
 }
 
@@ -185,9 +188,9 @@ func (self *WxWeb) _get(urlstr string, jsonFmt bool) (string, error) {
 }
 
 func (self *WxWeb) waitForLogin(tip int) bool {
-	url := "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login"
-	url += "?loginicon=true&tip=0&uuid=" + self.uuid + "&_=" + self._unixStr() + "&r=" + strconv.Itoa(int(time.Now().Unix())/1579)
-	data, _ := self._get(url, false)
+	_url := "https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login"
+	_url += "?loginicon=true&tip=0&uuid=" + self.uuid + "&_=" + self._unixStr() + "&r=" + strconv.Itoa(int(time.Now().Unix())/1579)
+	data, _ := self._get(_url, false)
 	re := regexp.MustCompile(`window.code=(\d+);`)
 	find := re.FindStringSubmatch(data)
 	if len(find) > 1 {
@@ -231,7 +234,7 @@ func (self *WxWeb) login(args ...interface{}) bool {
 	}
 	self.skey = v.Skey
 	self.sid = v.Wxsid
-	self.uin = v.Wxuin
+	self.Uin = v.Wxuin
 	self.BaseRequest = make(map[string]interface{})
 	self.BaseRequest["Uin"], _ = strconv.Atoi(v.Wxuin)
 	self.BaseRequest["Sid"] = v.Wxsid
@@ -260,6 +263,7 @@ func (self *WxWeb) webwxinit(args ...interface{}) bool {
 
 	//interface int和int型不能使用==
 	retCode := data["BaseResponse"].(map[string]interface{})["Ret"].(int)
+	self.login_in = true
 	return retCode == 0
 }
 
@@ -279,7 +283,7 @@ func (self *WxWeb) synccheck() (string, string) {
 	v.Add("r", self._unixStr())
 	v.Add("skey", self.skey)
 	v.Add("sid", self.sid)
-	v.Add("uin", self.uin)
+	v.Add("uin", self.Uin)
 	v.Add("deviceid", self.deviceId)
 	v.Add("synckey", self.synckey)
 	v.Add("_", self._unixStr())
@@ -478,6 +482,11 @@ func (self *WxWeb) Stopped() bool {
 
 func (self *WxWeb) Stop() {
 	self.stop = true
+	self.login_in = false
+}
+
+func (self *WxWeb) IsLogin() bool {
+	return self.login_in
 }
 
 func (self *WxWeb) Start() {
@@ -522,14 +531,17 @@ func (self *WxWeb) Start() {
 		} else if retcode == "1101" {
 			utils.Log("WxChat Start", "[*] 重新登陆 在其他地方登录")
 			WxClient.stop = true
+			self.login_in = false
 			break
 		} else if retcode == "1100" {
 			utils.Log("WxChat Start", "[*] 重新登陆 登出了微信")
 			WxClient.stop = true
+			self.login_in = false
 			break
 		} else if retcode == "1102" {
 			utils.Log("WxChat Start", "[*] 重新登陆 Cokice过期")
 			WxClient.stop = true
+			self.login_in = false
 			break
 		} else {
 			utils.Log("WxChat Start", "[*] retcode = " + retcode)
@@ -540,4 +552,5 @@ func (self *WxWeb) Start() {
 	p["status"] = "-1"
 	self._post(utils.Conf.WechatConf.LogoutCallbackUrl, p, false)
 	WxClient.stopped = true
+	self.login_in = false
 }

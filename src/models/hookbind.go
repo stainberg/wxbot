@@ -1,12 +1,12 @@
 package models
 
 import (
-	"fmt"
 	"github.com/stainberg/koalart"
 	"io"
 	"mirbase"
 	"net/http"
 	"utils"
+	"wx"
 )
 
 type HookBindController struct {
@@ -18,18 +18,6 @@ func (k *HookBindController) URLMapping() {
 	k.Mapping(koala.POST, k.Post)
 }
 
-func (c *HookBindController) Get() {
-	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
-		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
-		io.WriteString(c.Ctx.Writer, "illegal token")
-		return
-	}
-	c.Ctx.Writer.WriteHeader(http.StatusOK)
-	id := c.Ctx.Query.Get("id")
-	_, name := mirbase.FindNameById(id)
-	io.WriteString(c.Ctx.Writer, name)
-}
-
 func (c *HookBindController) Post() {
 	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
 		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
@@ -38,16 +26,20 @@ func (c *HookBindController) Post() {
 	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	name := c.Ctx.Form.Get("name")
-	id := c.Ctx.Form.Get("id")
-	if name == "" || id == "" {
+	if name == "" {
 		io.WriteString(c.Ctx.Writer, `illegal id or token`)
 		return
 	}
-	b, msg := mirbase.BindIdToName(id, name)
-	if !b {
-		io.WriteString(c.Ctx.Writer, msg)
-		return
+	if wx.WxClient != nil {
+		if wx.WxClient.IsLogin() {
+			b, msg := mirbase.BindIdToName(wx.WxClient.Uin, name)
+			if !b {
+				io.WriteString(c.Ctx.Writer, msg)
+				return
+			}
+			io.WriteString(c.Ctx.Writer, `bind ok`)
+			return
+		}
 	}
-	url := fmt.Sprintf(`%s/v1/wechat/hook/%s/send`, c.Ctx.Request.Host, id)
-	io.WriteString(c.Ctx.Writer, url)
+	io.WriteString(c.Ctx.Writer, `bind failed`)
 }

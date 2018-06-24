@@ -5,7 +5,6 @@ import (
 	"io"
 	"mirbase"
 	"net/http"
-	"strings"
 	"wx"
 	"utils"
 )
@@ -26,21 +25,17 @@ func (c *HookSendController) Post() {
 	}
 	c.Ctx.Writer.WriteHeader(http.StatusOK)
 	message := c.Ctx.Form.Get("message")
-	s := strings.Split(c.Ctx.Request.URL.Path, "/")
-	id := s[len(s)-2]
-	b, name := mirbase.FindNameById(id)
-	if !b {
-		io.WriteString(c.Ctx.Writer, `name or id not bind`)
-		return
-	}
 	if message == "" {
 		io.WriteString(c.Ctx.Writer, `can't send nil message`)
 		return
 	}
-	status, resp := wx.WxClient.SendMessage(message, name)
-	if status {
-		io.WriteString(c.Ctx.Writer, `send ok msg = ` + resp)
-	} else {
-		io.WriteString(c.Ctx.Writer, `send fail msg = ` + resp)
+	members := mirbase.GetAllMembers()
+	for _, member := range members {
+		status, _ := wx.WxClient.SendMessage(message, member)
+		if !status {
+			io.WriteString(c.Ctx.Writer, `send failed`)
+			return
+		}
 	}
+	io.WriteString(c.Ctx.Writer, `send ok`)
 }

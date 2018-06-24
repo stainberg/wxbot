@@ -65,8 +65,8 @@ func LoadConfig(file string) {
 	Conf.HttpConf.Token = getValue("token", c, "97ae848899631d3c6a656c855090a6e5bca4dc65")
 	Conf.WechatConf.LogoutCallbackUrl = getValue("wxlogoutcallback", c, "http://localhost:8888/callback")
 	Conf.RedisConf.Host = getValue("host[redis]", c, "localhost")
-	Conf.RedisConf.Port = getValue("port[redis]", c, "8868")
-	Conf.RedisConf.Password = getValue("password", c, "")
+	Conf.RedisConf.Port = getValue("port[redis]", c, "6379")
+	Conf.RedisConf.Password = getValue("password", c, "reborn")
 	index, err := strconv.Atoi(getValue("db", c, "0"))
 	if err != nil {
 		index = 0
