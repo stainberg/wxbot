@@ -18,6 +18,7 @@ func (k *HookSendController) URLMapping() {
 }
 
 func (c *HookSendController) Post() {
+	defer c.Ctx.Request.Body.Close()
 	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
 		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
 		io.WriteString(c.Ctx.Writer, "illegal token")

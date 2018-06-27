@@ -18,6 +18,7 @@ func (k *WxLoginController) URLMapping() {
 }
 
 func (c *WxLoginController) Post() {
+	defer c.Ctx.Request.Body.Close()
 	if !utils.CheckToken(c.Ctx.Request.Header.Get("token")) {
 		c.Ctx.Writer.WriteHeader(http.StatusForbidden)
 		io.WriteString(c.Ctx.Writer, "illegal token")
@@ -29,6 +30,6 @@ func (c *WxLoginController) Post() {
 		time.Sleep(1 * time.Millisecond)
 	}
 	go wx.WxClient.Start()
-	io.WriteString(c.Ctx.Writer, `please open on web broswer http://zuluki.com:8889/qr`)
+	io.WriteString(c.Ctx.Writer, `please open https://url.link/v1/wechat/qrcode`)
 	return
 }

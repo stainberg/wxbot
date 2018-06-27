@@ -19,6 +19,9 @@ func init() {
 			koala.NSNamespace("login",
 				koala.NSController(new(models.WxLoginController)),
 			),
+			koala.NSNamespace("qrcode",
+				koala.NSController(new(models.QrCodeController)),
+			),
 		),
 	)
 	koala.RegisterNamespace(ns)

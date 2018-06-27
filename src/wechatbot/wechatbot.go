@@ -7,8 +7,18 @@ import (
 	"utils"
 	"mirbase"
 	"github.com/stainberg/koalart"
-	"wx"
+	"os/signal"
+	"syscall"
+	"log"
+	"net/http"
 )
+
+func StaticServer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "text/html")
+	staticHandler := http.FileServer(http.Dir("/home/rbo/"))
+	staticHandler.ServeHTTP(w, r)
+	return
+}
 
 func main() {
 	if len(os.Args) == 1 {
@@ -20,7 +30,10 @@ func main() {
 	}
 	mirbase.InitClient()
 	go func() {
-		wx.WxClient.Start()
+		koala.Run(utils.Conf.HttpConf.RestAPIPort)
 	}()
-	koala.Run(utils.Conf.HttpConf.RestAPIPort)
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-signalChan
+	log.Println("Shutdown signal received, exiting...")
 }
